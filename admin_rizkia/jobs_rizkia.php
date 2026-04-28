@@ -79,31 +79,144 @@ ORDER BY j.id_rizkia DESC");
 <html>
 <head>
 <title>Jobs - MachinaFlow</title>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
 body{background:#eef2f7;color:#2c3e50}
-.header{height:80px;margin-left:220px;background:linear-gradient(135deg,#1f2d3a,#2c3e50);color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold}
-.sidebar{width:220px;height:100vh;background:linear-gradient(180deg,#2c3e50,#34495e);position:fixed;top:0;left:0;display:flex;flex-direction:column}
-.logo{padding:24px 20px;font-size:22px;font-weight:bold;color:white;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08)}
+
+/* ===== ANIMASI BARU ===== */
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:translateY(18px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.header{
+    height:80px;
+    margin-left:220px;
+    background:linear-gradient(135deg,#1f2d3a,#2c3e50);
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    font-weight:bold
+}
+
+.sidebar{
+    width:220px;height:100vh;
+    background:linear-gradient(180deg,#2c3e50,#34495e);
+    position:fixed;top:0;left:0;
+    display:flex;flex-direction:column
+}
+
+.logo{
+    padding:24px 20px;
+    font-size:22px;
+    font-weight:bold;
+    color:white;
+    text-align:center;
+    border-bottom:1px solid rgba(255,255,255,0.08)
+}
+
 .menu{flex:1;padding:18px 12px;overflow-y:auto}
-.sidebar a{display:block;color:#ecf0f1;text-decoration:none;padding:12px 14px;margin-bottom:8px;border-radius:10px;font-size:14px;font-weight:bold}
+
+.sidebar a{
+    display:block;color:#ecf0f1;
+    text-decoration:none;
+    padding:12px 14px;
+    margin-bottom:8px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold
+}
+
 .sidebar a:hover{background:rgba(255,255,255,0.08)}
 .sidebar a.active{background:rgba(255,255,255,0.12)}
 .logout{margin:12px;background:#e74c3c !important;text-align:center;border-radius:10px}
+
 .content{margin-left:220px;padding:25px}
-.card{background:white;border-radius:16px;padding:22px;margin-bottom:22px;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
+
+/* ===== CARD ANIMASI ===== */
+.card{
+    background:white;
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:22px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.06);
+    animation:fadeUp 0.6s ease;
+}
+
 .card h3{margin-bottom:16px}
-input,select{width:100%;padding:10px;margin-bottom:10px;border:1px solid #dcdde1;border-radius:10px}
-table{width:100%;border-collapse:collapse}
-th{background:#2c3e50;color:white;padding:12px;text-align:center}
-td{padding:10px;text-align:center;border-bottom:1px solid #ecf0f1}
-button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;color:white}
-.btn-update{background:#2c3e50}.btn-edit{background:#3498db}.btn-hapus{background:#e74c3c}.btn-batal{background:#7f8c8d}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);justify-content:center;align-items:center}
-.modal-box{background:white;width:420px;padding:20px;border-radius:16px}
+
+/* INPUT */
+input,select{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border:1px solid #dcdde1;
+    border-radius:10px
+}
+
+table{
+    width:100%;
+    border-collapse:collapse
+}
+
+th{
+    background:#2c3e50;
+    color:white;
+    padding:12px;
+    text-align:center
+}
+
+/* ===== ROW ANIMASI ===== */
+td{
+    padding:10px;
+    text-align:center;
+    border-bottom:1px solid #ecf0f1;
+    animation:fadeUp 0.5s ease;
+}
+
+button{
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    color:white
+}
+
+.btn-update{background:#2c3e50}
+.btn-edit{background:#3498db}
+.btn-hapus{background:#e74c3c}
+.btn-batal{background:#7f8c8d}
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.45);
+    justify-content:center;
+    align-items:center
+}
+
+.modal-box{
+    background:white;
+    width:420px;
+    padding:20px;
+    border-radius:16px;
+    animation:fadeUp 0.4s ease;
+}
 </style>
 </head>
+
 <body>
+
 <div class="sidebar">
     <div class="logo">MachinaFlow</div>
     <div class="menu">
@@ -120,21 +233,25 @@ button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;color:white
 </div>
 
 <div class="header">Jobs Management</div>
+
 <div class="content">
     <div class="card">
         <h3>Tambah Job Produksi</h3>
         <form method="POST">
-            <label>Sparepart (opsional, disarankan dipilih)</label>
+            <label>Sparepart</label>
             <select name="sparepart_id_rizkia">
                 <option value="0">-- Manual / Belum ditentukan --</option>
                 <?php mysqli_data_seek($spareparts, 0); while($s=mysqli_fetch_assoc($spareparts)){ ?>
-                    <option value="<?= $s['id_rizkia'] ?>"><?= htmlspecialchars($s['kode_part_rizkia'].' - '.$s['nama_part_rizkia']) ?></option>
+                    <option value="<?= $s['id_rizkia'] ?>">
+                        <?= htmlspecialchars($s['kode_part_rizkia'].' - '.$s['nama_part_rizkia']) ?>
+                    </option>
                 <?php } ?>
             </select>
-            <input type="text" name="nama_rizkia" placeholder="Nama Job (otomatis jika pilih sparepart)">
+
+            <input type="text" name="nama_rizkia" placeholder="Nama Job">
             <input type="number" name="jumlah_rizkia" placeholder="Jumlah" required>
-            <label>Deadline</label>
             <input type="date" name="deadline_rizkia" required>
+
             <button class="btn-update" name="tambah_rizkia">Tambah</button>
         </form>
     </div>
@@ -150,6 +267,7 @@ button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;color:white
                 <th>Status</th>
                 <th>Aksi</th>
             </tr>
+
             <?php while($d=mysqli_fetch_assoc($data)){ ?>
             <tr>
                 <td><?= $d['kode_part_rizkia'] ? htmlspecialchars($d['kode_part_rizkia'].' - '.$d['nama_part_rizkia']) : '-' ?></td>
@@ -159,6 +277,7 @@ button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;color:white
                 <td><?= htmlspecialchars($d['status_rizkia']) ?></td>
                 <td>
                     <button class="btn-edit" onclick="openEdit('<?= $d['id_rizkia'] ?>','<?= (int)$d['sparepart_id_rizkia'] ?>','<?= htmlspecialchars($d['nama_job_rizkia'], ENT_QUOTES) ?>','<?= (int)$d['jumlah_rizkia'] ?>','<?= $d['deadline_rizkia'] ?>')">Edit</button>
+
                     <form method="POST" style="display:inline">
                         <input type="hidden" name="id" value="<?= $d['id_rizkia'] ?>">
                         <button class="btn-hapus" name="hapus_rizkia">Hapus</button>
@@ -175,16 +294,19 @@ button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;color:white
         <h3>Edit Job</h3>
         <form method="POST">
             <input type="hidden" name="id" id="id">
-            <label>Sparepart</label>
             <select name="sparepart_id_rizkia" id="sparepart_id">
-                <option value="0">-- Manual / Belum ditentukan --</option>
+                <option value="0">-- Manual --</option>
                 <?php mysqli_data_seek($spareparts, 0); while($s=mysqli_fetch_assoc($spareparts)){ ?>
-                    <option value="<?= $s['id_rizkia'] ?>"><?= htmlspecialchars($s['kode_part_rizkia'].' - '.$s['nama_part_rizkia']) ?></option>
+                    <option value="<?= $s['id_rizkia'] ?>">
+                        <?= htmlspecialchars($s['kode_part_rizkia'].' - '.$s['nama_part_rizkia']) ?>
+                    </option>
                 <?php } ?>
             </select>
+
             <input type="text" name="nama_rizkia" id="nama">
-            <input type="number" name="jumlah_rizkia" id="jumlah" required>
-            <input type="date" name="deadline_rizkia" id="deadline" required>
+            <input type="number" name="jumlah_rizkia" id="jumlah">
+            <input type="date" name="deadline_rizkia" id="deadline">
+
             <button class="btn-update" name="update_rizkia">Update</button>
             <button type="button" class="btn-batal" onclick="closeModal()">Batal</button>
         </form>
@@ -200,7 +322,10 @@ function openEdit(id, sparepartId, nama, jumlah, deadline){
     document.getElementById('jumlah').value=jumlah;
     document.getElementById('deadline').value=deadline;
 }
-function closeModal(){ document.getElementById('modal').style.display='none'; }
+function closeModal(){
+    document.getElementById('modal').style.display='none';
+}
 </script>
+
 </body>
 </html>

@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 include '../config_rizkia/koneksi_rizkia.php';
 session_start();
@@ -16,12 +16,36 @@ if(isset($_POST['tambah_rizkia'])){
     mysqli_query($conn_rizkia,"INSERT INTO mesin_rizkia 
     VALUES(NULL,'$nama','Normal','$durasi')");
 }
+
+/* EDIT MESIN */
+if(isset($_POST['edit_rizkia'])){
+    $id = $_POST['id'];
+    $nama = mysqli_real_escape_string($conn_rizkia, $_POST['nama']);
+    $durasi = mysqli_real_escape_string($conn_rizkia, $_POST['durasi']);
+
+    mysqli_query($conn_rizkia,"
+        UPDATE mesin_rizkia 
+        SET nama_mesin_rizkia='$nama',
+            durasi_produksi_rizkia='$durasi'
+        WHERE id_rizkia='$id'
+    ");
+}
+
+/* HAPUS MESIN */
+if(isset($_POST['hapus_rizkia'])){
+    $id = $_POST['id'];
+
+    mysqli_query($conn_rizkia,"
+        DELETE FROM mesin_rizkia WHERE id_rizkia='$id'
+    ");
+}
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
 <title>Mesin - MachinaFlow</title>
+
 <style>
 *{
     margin:0;
@@ -33,6 +57,18 @@ if(isset($_POST['tambah_rizkia'])){
 body{
     background:#eef2f7;
     color:#2c3e50;
+}
+
+/* ===== ANIMASI BARU (DARI DASHBOARD STYLE) ===== */
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:translateY(18px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
 
 /* HEADER */
@@ -100,17 +136,11 @@ body{
     background:rgba(255,255,255,0.12);
 }
 
-/* LOGOUT */
 .logout{
     margin:12px;
     background:#e74c3c !important;
     text-align:center;
     border-radius:10px;
-}
-
-.logout:hover{
-    background:#c0392b !important;
-    transform:none !important;
 }
 
 /* CONTENT */
@@ -119,14 +149,16 @@ body{
     padding:25px;
 }
 
-/* CARD */
+/* ===== CARD + ANIMASI ===== */
 .card{
     background:white;
     border-radius:16px;
     padding:22px;
     margin-bottom:22px;
     box-shadow:0 8px 20px rgba(0,0,0,0.06);
-    animation:fadeIn 0.5s ease;
+
+    /* ANIMASI MASUK */
+    animation:fadeUp 0.6s ease;
 }
 
 .card h3{
@@ -148,76 +180,45 @@ body{
     flex-direction:column;
 }
 
-.input-group label{
-    margin-bottom:6px;
-    font-size:13px;
-    font-weight:bold;
-    color:#34495e;
-}
-
 input{
     width:100%;
     padding:12px;
     border:1px solid #dcdde1;
     border-radius:10px;
     font-size:14px;
-    transition:0.3s;
 }
 
-input:focus{
-    outline:none;
-    border-color:#2980b9;
-    box-shadow:0 0 0 3px rgba(41,128,185,0.15);
-}
-
-/* BUTTON */
 button{
     padding:12px 18px;
     border:none;
     border-radius:10px;
     background:linear-gradient(135deg,#2c3e50,#34495e);
     color:white;
-    font-size:14px;
     font-weight:bold;
     cursor:pointer;
-    transition:0.3s;
-    box-shadow:0 6px 14px rgba(44,62,80,0.18);
-}
-
-button:hover{
-    transform:translateY(-2px);
-    background:linear-gradient(135deg,#1f2d3a,#2c3e50);
 }
 
 /* TABLE */
-.table-wrap{
-    overflow-x:auto;
-}
+.table-wrap{overflow-x:auto;}
 
 table{
     width:100%;
     border-collapse:collapse;
-    border-radius:12px;
-    overflow:hidden;
 }
 
 th{
     background:#2c3e50;
     color:white;
     padding:14px;
-    font-size:14px;
-    text-align:center;
 }
 
 td{
     padding:13px;
     text-align:center;
     border-bottom:1px solid #ecf0f1;
-    font-size:14px;
-}
 
-tr:hover td{
-    background:#f8fafc;
+    /* ANIMASI ROW MASUK */
+    animation:fadeUp 0.5s ease;
 }
 
 .status{
@@ -225,24 +226,39 @@ tr:hover td{
     border-radius:20px;
     font-size:12px;
     font-weight:bold;
-    display:inline-block;
-}
-
-.status.normal{
     background:#eafaf1;
     color:#27ae60;
 }
 
-/* ANIMATION */
-@keyframes fadeIn{
-    from{
-        opacity:0;
-        transform:translateY(12px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
+/* BUTTON */
+.btn{
+    padding:6px 10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+    margin:2px;
+}
+
+.edit{background:#3498db;color:white;}
+.delete{background:#e74c3c;color:white;}
+
+/* MODAL */
+.modal{
+    display:none;
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-content{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    width:320px;
 }
 </style>
 </head>
@@ -266,58 +282,110 @@ tr:hover td{
     <a class="logout" href="../auth_rizkia/logout_rizkia.php">Logout</a>
 </div>
 
-<div class="header">
-    Machine Management
-</div>
+<div class="header">Machine Management</div>
 
 <div class="content">
 
-    <div class="card">
-        <h3>Tambah Mesin</h3>
+<div class="card">
+<h3>Tambah Mesin</h3>
 
-        <form method="POST" class="form-grid">
-            <div class="input-group">
-                <label>Nama Mesin</label>
-                <input type="text" name="nama" placeholder="Contoh: CNC Lathe" required>
-            </div>
-
-            <div class="input-group">
-                <label>Durasi Produksi (menit)</label>
-                <input type="number" name="durasi" placeholder="Contoh: 30" required>
-            </div>
-
-            <button name="tambah_rizkia">Tambah</button>
-        </form>
+<form method="POST" class="form-grid">
+    <div class="input-group">
+        <label>Nama Mesin</label>
+        <input type="text" name="nama" required>
     </div>
 
-    <div class="card">
-        <h3>Data Mesin</h3>
-
-        <div class="table-wrap">
-            <table>
-                <tr>
-                    <th>ID</th>
-                    <th>Nama Mesin</th>
-                    <th>Durasi Produksi</th>
-                    <th>Status</th>
-                </tr>
-
-                <?php
-                $data = mysqli_query($conn_rizkia,"SELECT * FROM mesin_rizkia");
-                while($d=mysqli_fetch_array($data)){
-                ?>
-                <tr>
-                    <td><?= $d['id_rizkia'] ?></td>
-                    <td><?= $d['nama_mesin_rizkia'] ?></td>
-                    <td><?= $d['durasi_produksi_rizkia'] ?> menit</td>
-                    <td><span class="status normal"><?= $d['status_rizkia'] ?></span></td>
-                </tr>
-                <?php } ?>
-            </table>
-        </div>
+    <div class="input-group">
+        <label>Durasi</label>
+        <input type="number" name="durasi" required>
     </div>
+
+    <button name="tambah_rizkia">Tambah</button>
+</form>
+</div>
+
+<div class="card">
+<h3>Data Mesin</h3>
+
+<div class="table-wrap">
+<table>
+<tr>
+    <th>ID</th>
+    <th>Nama</th>
+    <th>Durasi</th>
+    <th>Status</th>
+    <th>Aksi</th>
+</tr>
+
+<?php
+$data = mysqli_query($conn_rizkia,"SELECT * FROM mesin_rizkia");
+while($d=mysqli_fetch_array($data)){
+?>
+<tr>
+    <td><?= $d['id_rizkia'] ?></td>
+    <td><?= $d['nama_mesin_rizkia'] ?></td>
+    <td><?= $d['durasi_produksi_rizkia'] ?></td>
+    <td><span class="status"><?= $d['status_rizkia'] ?></span></td>
+    <td>
+        <button class="btn edit"
+        onclick="editData('<?= $d['id_rizkia'] ?>','<?= $d['nama_mesin_rizkia'] ?>','<?= $d['durasi_produksi_rizkia'] ?>')">
+        Edit</button>
+
+        <button class="btn delete"
+        onclick="hapusData('<?= $d['id_rizkia'] ?>')">
+        Hapus</button>
+    </td>
+</tr>
+<?php } ?>
+</table>
+</div>
+</div>
 
 </div>
 
+<!-- MODAL EDIT -->
+<div class="modal" id="editModal">
+<div class="modal-content">
+<h3>Edit Mesin</h3>
+<form method="POST">
+    <input type="hidden" name="id" id="edit_id">
+    <input type="text" name="nama" id="edit_nama">
+    <input type="number" name="durasi" id="edit_durasi">
+    <button name="edit_rizkia">Simpan</button>
+</form>
+</div>
+</div>
+
+<!-- MODAL HAPUS -->
+<div class="modal" id="deleteModal">
+<div class="modal-content">
+<h3>Hapus Data?</h3>
+<form method="POST">
+    <input type="hidden" name="id" id="delete_id">
+    <button name="hapus_rizkia">Hapus</button>
+</form>
+</div>
+</div>
+
+<script>
+function editData(id,nama,durasi){
+    document.getElementById('edit_id').value=id;
+    document.getElementById('edit_nama').value=nama;
+    document.getElementById('edit_durasi').value=durasi;
+    document.getElementById('editModal').style.display='flex';
+}
+
+function hapusData(id){
+    document.getElementById('delete_id').value=id;
+    document.getElementById('deleteModal').style.display='flex';
+}
+
+window.onclick=function(e){
+    if(e.target.className=='modal'){
+        e.target.style.display='none';
+    }
+}
+</script>
+
 </body>
-</html>
+</html> 
