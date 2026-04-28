@@ -2,454 +2,220 @@
 
 session_start();
 include '../config_rizkia/koneksi_rizkia.php';
-date_default_timezone_set("Asia/Jakarta");
+include '../config_rizkia/security_rizkia.php';
+date_default_timezone_set('Asia/Jakarta');
 
-/* ROLE CHECK ENGINEERING */
-if(!isset($_SESSION['user_rizkia']['role_rizkia']) || $_SESSION['user_rizkia']['role_rizkia'] != 'engineering'){
-    die("Akses ditolak. Hanya Engineering.");
+if(!isset($_SESSION['user_rizkia']['role_rizkia']) || $_SESSION['user_rizkia']['role_rizkia'] !== 'engineering'){
+    die('Akses ditolak. Hanya Engineering.');
 }
 
-/* UPDATE STATUS MESIN */
-if(isset($_POST['update_rizkia'])){
-    $id_mesin = mysqli_real_escape_string($conn_rizkia, $_POST['id_mesin']);
-    $status = mysqli_real_escape_string($conn_rizkia, $_POST['status']);
+mysqli_query($conn_rizkia, "CREATE TABLE IF NOT EXISTS maintenance_plan (
+  id_rizkia INT AUTO_INCREMENT PRIMARY KEY,
+  mesin_id_rizkia INT NOT NULL,
+  tanggal_pm_rizkia DATE NOT NULL,
+  checklist_rizkia TEXT DEFAULT NULL,
+  status_rizkia VARCHAR(50) DEFAULT 'Terjadwal'
+)");
 
-    mysqli_query($conn_rizkia,"UPDATE mesin_rizkia 
-    SET status_rizkia='$status' 
-    WHERE id_rizkia='$id_mesin'");
+mysqli_query($conn_rizkia, "CREATE TABLE IF NOT EXISTS maintenance_log (
+  id_rizkia INT AUTO_INCREMENT PRIMARY KEY,
+  mesin_id_rizkia INT NOT NULL,
+  mulai_rizkia DATETIME DEFAULT NULL,
+  selesai_rizkia DATETIME DEFAULT NULL,
+  durasi_menit_rizkia INT DEFAULT NULL,
+  catatan_rizkia TEXT DEFAULT NULL
+)");
+
+$flash = '';
+
+if(isset($_POST['update_status_rizkia']) && csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
+    $id_mesin = (int)($_POST['id_mesin_rizkia'] ?? 0);
+    $status = $_POST['status_rizkia'] ?? 'Normal';
+    $allowed = ['Normal', 'Rusak', 'Perbaikan'];
+    if($id_mesin > 0 && in_array($status, $allowed, true)){
+        $stmt = mysqli_prepare($conn_rizkia, 'UPDATE mesin_rizkia SET status_rizkia=? WHERE id_rizkia=?');
+        mysqli_stmt_bind_param($stmt, 'si', $status, $id_mesin);
+        mysqli_stmt_execute($stmt);
+        $flash = 'Status mesin berhasil diperbarui.';
+    }
 }
+
+if(isset($_POST['buat_pm_rizkia']) && csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
+    $mesin = (int)($_POST['mesin_id_rizkia'] ?? 0);
+    $tanggal = $_POST['tanggal_pm_rizkia'] ?? '';
+    $checklist = trim($_POST['checklist_rizkia'] ?? '');
+
+    if($mesin > 0 && $tanggal !== ''){
+        $stmt = mysqli_prepare($conn_rizkia, "INSERT INTO maintenance_plan (mesin_id_rizkia, tanggal_pm_rizkia, checklist_rizkia, status_rizkia) VALUES (?, ?, ?, 'Terjadwal')");
+        mysqli_stmt_bind_param($stmt, 'iss', $mesin, $tanggal, $checklist);
+        mysqli_stmt_execute($stmt);
+        $flash = 'Jadwal preventive maintenance ditambahkan.';
+    }
+}
+
+if(isset($_POST['eksekusi_pm_rizkia']) && csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
+    $pm_id = (int)($_POST['pm_id_rizkia'] ?? 0);
+    $mulai = $_POST['mulai_rizkia'] ?? '';
+    $selesai = $_POST['selesai_rizkia'] ?? '';
+    $catatan = trim($_POST['catatan_rizkia'] ?? '');
+
+    if($pm_id > 0 && $mulai !== '' && $selesai !== ''){
+        $pm = mysqli_fetch_assoc(mysqli_query($conn_rizkia, "SELECT mesin_id_rizkia FROM maintenance_plan WHERE id_rizkia='{$pm_id}' LIMIT 1"));
+        if($pm){
+            $durasi = max(0, (int)round((strtotime($selesai) - strtotime($mulai)) / 60));
+            $mesin_id = (int)$pm['mesin_id_rizkia'];
+
+            $stmt_log = mysqli_prepare($conn_rizkia, 'INSERT INTO maintenance_log (mesin_id_rizkia, mulai_rizkia, selesai_rizkia, durasi_menit_rizkia, catatan_rizkia) VALUES (?, ?, ?, ?, ?)');
+            mysqli_stmt_bind_param($stmt_log, 'issis', $mesin_id, $mulai, $selesai, $durasi, $catatan);
+            mysqli_stmt_execute($stmt_log);
+
+            mysqli_query($conn_rizkia, "UPDATE maintenance_plan SET status_rizkia='Selesai' WHERE id_rizkia='{$pm_id}'");
+            mysqli_query($conn_rizkia, "UPDATE mesin_rizkia SET status_rizkia='Normal' WHERE id_rizkia='{$mesin_id}'");
+            $flash = 'Preventive maintenance selesai, log berhasil disimpan.';
+        }
+    }
+}
+
+$mesin_data = mysqli_query($conn_rizkia, 'SELECT * FROM mesin_rizkia ORDER BY id_rizkia ASC');
+$mesin_dropdown = mysqli_query($conn_rizkia, 'SELECT id_rizkia, nama_mesin_rizkia FROM mesin_rizkia ORDER BY nama_mesin_rizkia ASC');
+$pm_data = mysqli_query($conn_rizkia, "SELECT p.*, m.nama_mesin_rizkia FROM maintenance_plan p JOIN mesin_rizkia m ON p.mesin_id_rizkia=m.id_rizkia ORDER BY p.tanggal_pm_rizkia ASC, p.id_rizkia DESC");
+$log_data = mysqli_query($conn_rizkia, "SELECT l.*, m.nama_mesin_rizkia FROM maintenance_log l JOIN mesin_rizkia m ON l.mesin_id_rizkia=m.id_rizkia ORDER BY l.id_rizkia DESC LIMIT 20");
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
-<title>Engineering Dashboard - MachinaFlow</title>
-
+<title>Engineering - Mesin & Maintenance</title>
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, sans-serif;
-}
-
-body{
-    background:linear-gradient(135deg,#eef2f7,#dfe9f3);
-    color:#2c3e50;
-    overflow-x:hidden;
-}
-
-/* ANIMATION */
-@keyframes fadeUp{
-    from{
-        opacity:0;
-        transform:translateY(18px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-@keyframes fadeScale{
-    from{
-        opacity:0;
-        transform:scale(0.96);
-    }
-    to{
-        opacity:1;
-        transform:scale(1);
-    }
-}
-
-@keyframes floatBg{
-    0%,100%{ transform:translateY(0px); }
-    50%{ transform:translateY(-12px); }
-}
-
-/* BACKGROUND DECOR */
-.bg1,.bg2,.bg3{
-    position:fixed;
-    border-radius:50%;
-    background:rgba(44,62,80,0.05);
-    z-index:0;
-    animation:floatBg 8s ease-in-out infinite;
-}
-
-.bg1{
-    width:260px;
-    height:260px;
-    top:-90px;
-    left:-80px;
-}
-
-.bg2{
-    width:180px;
-    height:180px;
-    right:40px;
-    top:120px;
-    animation-delay:2s;
-}
-
-.bg3{
-    width:140px;
-    height:140px;
-    right:180px;
-    bottom:40px;
-    animation-delay:4s;
-}
-
-/* HEADER */
-.header{
-    height:80px;
-    margin-left:220px;
-    background:linear-gradient(135deg,#1f2d3a,#2c3e50,#34495e);
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:24px;
-    font-weight:bold;
-    letter-spacing:1px;
-    box-shadow:0 4px 15px rgba(0,0,0,0.15);
-    position:sticky;
-    top:0;
-    z-index:10;
-}
-
-/* SIDEBAR */
-.sidebar{
-    width:220px;
-    height:100vh;
-    background:linear-gradient(180deg,#2c3e50,#34495e);
-    position:fixed;
-    top:0;
-    left:0;
-    display:flex;
-    flex-direction:column;
-    box-shadow:4px 0 15px rgba(0,0,0,0.12);
-    z-index:11;
-}
-
-.brand{
-    padding:24px 20px;
-    font-size:22px;
-    font-weight:bold;
-    color:white;
-    text-align:center;
-    border-bottom:1px solid rgba(255,255,255,0.08);
-    letter-spacing:1px;
-}
-
-.menu{
-    flex:1;
-    padding:18px 12px;
-    overflow-y:auto;
-}
-
-.sidebar a{
-    display:block;
-    color:#ecf0f1;
-    text-decoration:none;
-    padding:12px 14px;
-    margin-bottom:8px;
-    border-radius:10px;
-    transition:0.3s;
-    font-size:14px;
-    font-weight:bold;
-}
-
-.sidebar a:hover{
-    background:rgba(255,255,255,0.08);
-    transform:translateX(4px);
-}
-
-.sidebar a.active{
-    background:rgba(255,255,255,0.12);
-}
-
-/* LOGOUT */
-.logout{
-    margin:12px;
-    background:#e74c3c;
-    text-align:center;
-    padding:12px;
-    border-radius:10px;
-    font-weight:bold;
-    color:white !important;
-    text-decoration:none;
-    transition:0.3s;
-}
-
-.logout:hover{
-    background:#c0392b !important;
-    transform:none !important;
-}
-
-/* CONTENT */
-.content{
-    margin-left:220px;
-    padding:25px;
-    position:relative;
-    z-index:1;
-}
-
-/* CARD */
-.card{
-    background:rgba(255,255,255,0.96);
-    backdrop-filter:blur(8px);
-    border-radius:18px;
-    padding:22px;
-    margin-bottom:22px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.08);
-    border:1px solid #e6ebf1;
-    animation:fadeUp 0.5s ease;
-}
-
-.card h3{
-    margin-bottom:18px;
-    font-size:22px;
-    color:#2c3e50;
-    border-bottom:2px solid #eef2f7;
-    padding-bottom:10px;
-}
-
-/* TABLE */
-table{
-    width:100%;
-    border-collapse:collapse;
-    border-radius:14px;
-    overflow:hidden;
-    background:white;
-}
-
-th{
-    background:#2c3e50;
-    color:white;
-    padding:14px;
-    font-size:14px;
-    text-align:center;
-}
-
-td{
-    padding:14px;
-    text-align:center;
-    border-bottom:1px solid #eef2f7;
-    font-size:14px;
-}
-
-tr:hover{
-    background:#f8fbff;
-}
-
-/* BADGE */
-.badge{
-    display:inline-block;
-    padding:7px 12px;
-    border-radius:999px;
-    color:white;
-    font-size:12px;
-    font-weight:bold;
-}
-
-.normal{ background:#27ae60; }
-.rusak{ background:#e74c3c; }
-.perbaikan{ background:#f39c12; }
-.diproses{ background:#3498db; }
-.selesai{ background:#8e44ad; }
-
-/* BUTTON */
-button{
-    padding:9px 14px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    font-size:13px;
-    font-weight:bold;
-    transition:0.3s;
-}
-
-.btn-primary{
-    background:#3498db;
-    color:white;
-}
-
-.btn-primary:hover{
-    background:#2980b9;
-}
-
-.btn-danger{
-    background:#e74c3c;
-    color:white;
-}
-
-.btn-danger:hover{
-    background:#c0392b;
-}
-
-/* MODAL */
-#modal{
-    display:none;
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.45);
-    justify-content:center;
-    align-items:center;
-    z-index:999;
-}
-
-.modal-box{
-    background:white;
-    width:380px;
-    padding:25px;
-    border-radius:18px;
-    box-shadow:0 15px 40px rgba(0,0,0,0.2);
-    animation:fadeScale 0.3s ease;
-}
-
-.modal-box h3{
-    margin-bottom:16px;
-    color:#2c3e50;
-}
-
-.modal-box select{
-    width:100%;
-    padding:11px 12px;
-    margin-top:10px;
-    border:1px solid #dcdde1;
-    border-radius:10px;
-    outline:none;
-    background:#fbfcfe;
-    font-size:14px;
-}
-
-.modal-box select:focus{
-    border-color:#3498db;
-    box-shadow:0 0 8px rgba(52,152,219,0.15);
-    background:white;
-}
-
-.modal-action{
-    display:flex;
-    gap:10px;
-    margin-top:18px;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#eef2f7;color:#2c3e50}
+.header{height:80px;margin-left:220px;background:linear-gradient(135deg,#1f2d3a,#2c3e50);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold}
+.sidebar{width:220px;height:100vh;background:linear-gradient(180deg,#2c3e50,#34495e);position:fixed;top:0;left:0;display:flex;flex-direction:column}
+.brand{padding:24px 20px;font-size:22px;font-weight:bold;color:white;text-align:center;border-bottom:1px solid rgba(255,255,255,.08)}
+.menu{flex:1;padding:18px 12px}.sidebar a{display:block;color:#ecf0f1;text-decoration:none;padding:12px 14px;margin-bottom:8px;border-radius:10px;font-weight:bold}
+.sidebar a.active,.sidebar a:hover{background:rgba(255,255,255,.12)}
+.logout{margin:12px;background:#e74c3c;color:#fff !important;text-align:center}
+.content{margin-left:220px;padding:25px}
+.card{background:#fff;border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 8px 16px rgba(0,0,0,.06)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+input,select,textarea{width:100%;padding:9px;border:1px solid #d5dce3;border-radius:8px;margin:6px 0 10px}
+button{border:0;border-radius:8px;padding:9px 12px;color:white;background:#2c3e50;font-weight:700;cursor:pointer}
+table{width:100%;border-collapse:collapse}th{background:#2c3e50;color:#fff;padding:11px}td{padding:10px;border-bottom:1px solid #edf1f4;text-align:center}
+.badge{padding:5px 10px;border-radius:999px;font-size:12px;font-weight:bold}.Normal{background:#d5f5e3;color:#145a32}.Rusak{background:#fadbd8;color:#922b21}.Perbaikan{background:#fdebd0;color:#7e5109}
+.flash{background:#eafaf1;color:#1e8449;padding:10px;border-radius:8px;margin-bottom:12px}
 </style>
-
 </head>
 <body>
-
-<div class="bg1"></div>
-<div class="bg2"></div>
-<div class="bg3"></div>
-
-<!-- SIDEBAR -->
 <div class="sidebar">
-    <div class="brand">MACHINAFLOW</div>
-
+    <div class="brand">MachinaFlow</div>
     <div class="menu">
         <a href="dashboard_rizkia.php">Dashboard</a>
         <a href="mesin_rizkia.php" class="active">Kelola Mesin</a>
     </div>
-
     <a class="logout" href="../auth_rizkia/logout_rizkia.php">Logout</a>
 </div>
-
-<!-- HEADER -->
-<div class="header">
-    Engineering Control Panel
-</div>
-
-<!-- CONTENT -->
+<div class="header">Engineering Center</div>
 <div class="content">
+    <?php if($flash){ ?><div class="flash"><?= htmlspecialchars($flash) ?></div><?php } ?>
 
-<div class="card">
-<h3>Status Mesin Produksi</h3>
+    <div class="card">
+        <h3>Status Mesin</h3>
+        <table>
+            <tr><th>Mesin</th><th>Status</th><th>Durasi Produksi (menit/unit)</th><th>Aksi</th></tr>
+            <?php while($m = mysqli_fetch_assoc($mesin_data)){ ?>
+            <tr>
+                <td><?= htmlspecialchars($m['nama_mesin_rizkia']) ?></td>
+                <td><span class="badge <?= htmlspecialchars($m['status_rizkia']) ?>"><?= htmlspecialchars($m['status_rizkia']) ?></span></td>
+                <td><?= (int)$m['durasi_produksi_rizkia'] ?></td>
+                <td>
+                    <form method="POST" style="display:flex;gap:8px;justify-content:center;align-items:center;">
+                        <?= csrf_input_rizkia(); ?>
+                        <input type="hidden" name="id_mesin_rizkia" value="<?= (int)$m['id_rizkia'] ?>">
+                        <select name="status_rizkia" style="width:130px;margin:0">
+                            <?php foreach(['Normal','Rusak','Perbaikan'] as $s){ ?>
+                                <option value="<?= $s ?>" <?= $m['status_rizkia']===$s?'selected':'' ?>><?= $s ?></option>
+                            <?php } ?>
+                        </select>
+                        <button name="update_status_rizkia">Update</button>
+                    </form>
+                </td>
+            </tr>
+            <?php } ?>
+        </table>
+    </div>
 
-<table>
-<tr>
-<th>ID</th>
-<th>Nama Mesin</th>
-<th>Status</th>
-<th>Aksi</th>
-</tr>
+    <div class="grid">
+        <div class="card">
+            <h3>Rencanakan Preventive Maintenance</h3>
+            <form method="POST">
+                <?= csrf_input_rizkia(); ?>
+                <label>Mesin</label>
+                <select name="mesin_id_rizkia" required>
+                    <option value="">-- Pilih Mesin --</option>
+                    <?php mysqli_data_seek($mesin_dropdown, 0); while($mm = mysqli_fetch_assoc($mesin_dropdown)){ ?>
+                        <option value="<?= (int)$mm['id_rizkia'] ?>"><?= htmlspecialchars($mm['nama_mesin_rizkia']) ?></option>
+                    <?php } ?>
+                </select>
+                <label>Tanggal PM</label>
+                <input type="date" name="tanggal_pm_rizkia" required>
+                <label>Checklist</label>
+                <textarea name="checklist_rizkia" rows="3" placeholder="Cek bearing, lubrication, alignment, belt, sensor..."></textarea>
+                <button name="buat_pm_rizkia">Tambah Jadwal PM</button>
+            </form>
+        </div>
 
-<?php
-$data = mysqli_query($conn_rizkia,"SELECT * FROM mesin_rizkia");
-while($d=mysqli_fetch_array($data)){
-
-    $badge = strtolower($d['status_rizkia']);
-?>
-<tr>
-    <td><?= $d['id_rizkia']; ?></td>
-    <td><?= $d['nama_mesin_rizkia']; ?></td>
-    <td><span class="badge <?= $badge; ?>"><?= $d['status_rizkia']; ?></span></td>
-    <td>
-        <button class="btn-primary" onclick="openModal('<?= $d['id_rizkia']; ?>')">Update</button>
-    </td>
-</tr>
-<?php } ?>
-</table>
-
-</div>
-
-</div>
-
-<!-- FORM HIDDEN -->
-<form method="POST" id="formUpdate" style="display:none;">
-    <input type="hidden" name="id_mesin" id="id_mesin">
-    <input type="hidden" name="status" id="status">
-    <button name="update_rizkia">submit</button>
-</form>
-
-<!-- MODAL -->
-<div id="modal">
-    <div class="modal-box">
-        <h3>Update Status Mesin</h3>
-
-        <select id="popup_status">
-            <option value="Normal">Normal</option>
-            <option value="Rusak">Rusak</option>
-            <option value="Perbaikan">Perbaikan</option>
-            <option value="Diproses">Diproses</option>
-            <option value="Selesai">Selesai</option>
-        </select>
-
-        <div class="modal-action">
-            <button class="btn-primary" onclick="submitUpdate()">Update</button>
-            <button class="btn-danger" onclick="closeModal()">Batal</button>
+        <div class="card">
+            <h3>Eksekusi PM Terjadwal</h3>
+            <form method="POST">
+                <?= csrf_input_rizkia(); ?>
+                <label>Jadwal PM</label>
+                <select name="pm_id_rizkia" required>
+                    <option value="">-- Pilih Jadwal --</option>
+                    <?php mysqli_data_seek($pm_data, 0); while($pm = mysqli_fetch_assoc($pm_data)){ if($pm['status_rizkia'] !== 'Terjadwal') continue; ?>
+                        <option value="<?= (int)$pm['id_rizkia'] ?>">#<?= (int)$pm['id_rizkia'] ?> - <?= htmlspecialchars($pm['nama_mesin_rizkia']) ?> (<?= htmlspecialchars($pm['tanggal_pm_rizkia']) ?>)</option>
+                    <?php } ?>
+                </select>
+                <label>Mulai</label>
+                <input type="datetime-local" name="mulai_rizkia" required>
+                <label>Selesai</label>
+                <input type="datetime-local" name="selesai_rizkia" required>
+                <label>Catatan</label>
+                <textarea name="catatan_rizkia" rows="3"></textarea>
+                <button name="eksekusi_pm_rizkia">Simpan Eksekusi PM</button>
+            </form>
         </div>
     </div>
+
+    <div class="card">
+        <h3>Daftar Jadwal PM</h3>
+        <table>
+            <tr><th>ID</th><th>Mesin</th><th>Tanggal</th><th>Checklist</th><th>Status</th></tr>
+            <?php mysqli_data_seek($pm_data, 0); while($pm = mysqli_fetch_assoc($pm_data)){ ?>
+            <tr>
+                <td><?= (int)$pm['id_rizkia'] ?></td>
+                <td><?= htmlspecialchars($pm['nama_mesin_rizkia']) ?></td>
+                <td><?= htmlspecialchars($pm['tanggal_pm_rizkia']) ?></td>
+                <td><?= htmlspecialchars($pm['checklist_rizkia'] ?: '-') ?></td>
+                <td><?= htmlspecialchars($pm['status_rizkia']) ?></td>
+            </tr>
+            <?php } ?>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Maintenance Log Terakhir</h3>
+        <table>
+            <tr><th>Mesin</th><th>Mulai</th><th>Selesai</th><th>Durasi (menit)</th><th>Catatan</th></tr>
+            <?php while($log = mysqli_fetch_assoc($log_data)){ ?>
+            <tr>
+                <td><?= htmlspecialchars($log['nama_mesin_rizkia']) ?></td>
+                <td><?= htmlspecialchars($log['mulai_rizkia']) ?></td>
+                <td><?= htmlspecialchars($log['selesai_rizkia']) ?></td>
+                <td><?= (int)$log['durasi_menit_rizkia'] ?></td>
+                <td><?= htmlspecialchars($log['catatan_rizkia'] ?: '-') ?></td>
+            </tr>
+            <?php } ?>
+        </table>
+    </div>
 </div>
-
-<script>
-let selectedId = null;
-
-function openModal(id){
-    selectedId = id;
-    document.getElementById('modal').style.display = 'flex';
-}
-
-function closeModal(){
-    document.getElementById('modal').style.display = 'none';
-}
-
-function submitUpdate(){
-    document.getElementById('id_mesin').value = selectedId;
-    document.getElementById('status').value = document.getElementById('popup_status').value;
-    document.getElementById('formUpdate').submit();
-}
-
-window.onclick = function(event){
-    let modal = document.getElementById('modal');
-    if(event.target == modal){
-        modal.style.display = "none";
-    }
-}
-</script>
-
 </body>
 </html>

@@ -349,8 +349,8 @@ tr:hover{ background:#f8fbff; }
 
     <div class="menu">
         <a href="dashboard_rizkia.php" class="active">Dashboard</a>
-        <a href="jadwal_rizkia.php">Jadwal Saya</a>
-        <a href="riwayat_rizkia.php">Riwayat Produksi</a>
+        <a href="kerja_rizkia.php">Work Center</a>
+        <a href="kerja_rizkia.php#riwayat">Riwayat Produksi</a>
     </div>
 
     <a class="logout" href="../auth_rizkia/logout_rizkia.php">Logout</a>
