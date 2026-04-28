@@ -1,4 +1,5 @@
 <?php
+
 include '../config_rizkia/koneksi_rizkia.php';
 session_start();
 
@@ -254,6 +255,7 @@ tr:hover td{
     <div class="menu">
         <a href="dashboard_rizkia.php">Dashboard</a>
         <a href="jobs_rizkia.php">Jobs</a>
+        <a href="sparepart_rizkia.php">Sparepart</a>
         <a href="scheduling_rizkia.php">Scheduling</a>
         <a href="mesin_rizkia.php" class="active">Mesin</a>
         <a href="users_rizkia.php">Users</a>

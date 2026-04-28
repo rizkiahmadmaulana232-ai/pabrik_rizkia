@@ -203,6 +203,128 @@ ALTER TABLE `scheduling_rizkia`
 --
 ALTER TABLE `users_rizkia`
   MODIFY `id_rizkia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+-- --------------------------------------------------------
+--
+--
+
+CREATE TABLE IF NOT EXISTS `sparepart_master` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `kode_part_rizkia` varchar(50) NOT NULL,
+  `nama_part_rizkia` varchar(150) NOT NULL,
+  `kategori_rizkia` varchar(100) DEFAULT NULL,
+  `tipe_motor_rizkia` varchar(100) DEFAULT NULL,
+  `satuan_rizkia` varchar(20) DEFAULT 'pcs',
+  `grade_kualitas_rizkia` varchar(50) DEFAULT NULL,
+  `aktif_rizkia` tinyint(1) DEFAULT 1,
+  PRIMARY KEY (`id_rizkia`),
+  UNIQUE KEY `uniq_kode_part_rizkia` (`kode_part_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `sparepart_bom` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `sparepart_id_rizkia` int(11) NOT NULL,
+  `nama_material_rizkia` varchar(150) NOT NULL,
+  `qty_per_unit_rizkia` decimal(12,3) NOT NULL DEFAULT 0.000,
+  `satuan_rizkia` varchar(20) DEFAULT 'pcs',
+  PRIMARY KEY (`id_rizkia`),
+  KEY `idx_bom_sparepart_rizkia` (`sparepart_id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `routing_proses` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `sparepart_id_rizkia` int(11) NOT NULL,
+  `urutan_rizkia` int(11) NOT NULL,
+  `nama_operasi_rizkia` varchar(120) NOT NULL,
+  `mesin_default_id_rizkia` int(11) DEFAULT NULL,
+  `durasi_menit_rizkia` int(11) DEFAULT 0,
+  PRIMARY KEY (`id_rizkia`),
+  KEY `idx_routing_sparepart_rizkia` (`sparepart_id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `work_order` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `nomor_wo_rizkia` varchar(50) NOT NULL,
+  `sparepart_id_rizkia` int(11) NOT NULL,
+  `qty_target_rizkia` int(11) NOT NULL,
+  `due_date_rizkia` date DEFAULT NULL,
+  `status_rizkia` varchar(50) DEFAULT 'Draft',
+  PRIMARY KEY (`id_rizkia`),
+  UNIQUE KEY `uniq_nomor_wo_rizkia` (`nomor_wo_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `work_order_operasi` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `work_order_id_rizkia` int(11) NOT NULL,
+  `routing_id_rizkia` int(11) NOT NULL,
+  `operator_id_rizkia` int(11) DEFAULT NULL,
+  `mesin_id_rizkia` int(11) DEFAULT NULL,
+  `waktu_mulai_rizkia` datetime DEFAULT NULL,
+  `waktu_selesai_rizkia` datetime DEFAULT NULL,
+  `status_rizkia` varchar(50) DEFAULT 'Dijadwalkan',
+  PRIMARY KEY (`id_rizkia`),
+  KEY `idx_wo_operasi_wo_rizkia` (`work_order_id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `stok_bahan` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_material_rizkia` varchar(150) NOT NULL,
+  `stok_rizkia` decimal(12,3) NOT NULL DEFAULT 0.000,
+  `satuan_rizkia` varchar(20) DEFAULT 'pcs',
+  `minimum_stok_rizkia` decimal(12,3) NOT NULL DEFAULT 0.000,
+  PRIMARY KEY (`id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `stok_barang_jadi` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `sparepart_id_rizkia` int(11) NOT NULL,
+  `stok_rizkia` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id_rizkia`),
+  KEY `idx_stok_fg_sparepart_rizkia` (`sparepart_id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `qc_result` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `work_order_operasi_id_rizkia` int(11) DEFAULT NULL,
+  `lot_no_rizkia` varchar(50) DEFAULT NULL,
+  `status_qc_rizkia` enum('Lulus','Rework','Reject') DEFAULT 'Lulus',
+  `catatan_rizkia` text DEFAULT NULL,
+  `created_at_rizkia` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `lot_traceability` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `lot_no_rizkia` varchar(50) NOT NULL,
+  `work_order_id_rizkia` int(11) DEFAULT NULL,
+  `operator_id_rizkia` int(11) DEFAULT NULL,
+  `mesin_id_rizkia` int(11) DEFAULT NULL,
+  `keterangan_rizkia` text DEFAULT NULL,
+  `created_at_rizkia` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_rizkia`),
+  KEY `idx_trace_lot_rizkia` (`lot_no_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `maintenance_plan` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `mesin_id_rizkia` int(11) NOT NULL,
+  `tanggal_pm_rizkia` date NOT NULL,
+  `checklist_rizkia` text DEFAULT NULL,
+  `status_rizkia` varchar(50) DEFAULT 'Terjadwal',
+  PRIMARY KEY (`id_rizkia`),
+  KEY `idx_pm_mesin_rizkia` (`mesin_id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `maintenance_log` (
+  `id_rizkia` int(11) NOT NULL AUTO_INCREMENT,
+  `mesin_id_rizkia` int(11) NOT NULL,
+  `mulai_rizkia` datetime DEFAULT NULL,
+  `selesai_rizkia` datetime DEFAULT NULL,
+  `durasi_menit_rizkia` int(11) DEFAULT NULL,
+  `catatan_rizkia` text DEFAULT NULL,
+  PRIMARY KEY (`id_rizkia`),
+  KEY `idx_ml_mesin_rizkia` (`mesin_id_rizkia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

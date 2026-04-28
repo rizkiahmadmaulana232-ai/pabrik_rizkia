@@ -1,4 +1,5 @@
 <?php
+
 include '../config_rizkia/koneksi_rizkia.php';
 
 if(isset($_POST['reset_rizkia'])){

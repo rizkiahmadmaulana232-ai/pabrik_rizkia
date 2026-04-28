@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 include '../config_rizkia/koneksi_rizkia.php';
 date_default_timezone_set("Asia/Jakarta");
@@ -355,6 +356,7 @@ tr:hover{
     <div class="menu">
         <a href="dashboard_rizkia.php" class="active">Dashboard</a>
         <a href="jobs_rizkia.php">Jobs</a>
+        <a href="sparepart_rizkia.php">Sparepart</a>
         <a href="scheduling_rizkia.php">Scheduling</a>
         <a href="mesin_rizkia.php">Mesin</a>
         <a href="users_rizkia.php">Users</a>
