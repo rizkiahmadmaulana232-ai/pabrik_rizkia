@@ -2,19 +2,22 @@
 
 include '../config_rizkia/koneksi_rizkia.php';
 session_start();
+include '../config_rizkia/security_rizkia.php';
 
 /* ROLE CHECK */
-if(!isset($_SESSION['user_rizkia'])){
+if(!isset($_SESSION['user_rizkia']) || $_SESSION['user_rizkia']['role_rizkia'] != 'admin'){
     header("Location: ../auth_rizkia/login_rizkia.php");
     exit;
 }
 
 /* SIMPAN LAPORAN */
 if(isset($_POST['simpan_rizkia'])){
-    $isi = mysqli_real_escape_string($conn_rizkia, $_POST['isi']);
-
-    mysqli_query($conn_rizkia,"INSERT INTO laporan_rizkia 
-    VALUES(NULL,'$isi',CURDATE())");
+    if(csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
+        $isi = mysqli_real_escape_string($conn_rizkia, $_POST['isi'] ?? '');
+        if($isi !== ''){
+            mysqli_query($conn_rizkia,"INSERT INTO laporan_rizkia VALUES(NULL,'$isi',CURDATE())");
+        }
+    }
 }
 ?>
 
@@ -267,6 +270,7 @@ if(isset($_POST['simpan_rizkia'])){
         <h3>Buat Laporan</h3>
 
         <form method="POST">
+            <?= csrf_input_rizkia(); ?>
             <textarea name="isi" placeholder="Tulis laporan produksi hari ini..." required></textarea>
             <button name="simpan_rizkia">Simpan Laporan</button>
         </form>

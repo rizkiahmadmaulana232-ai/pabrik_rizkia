@@ -4,7 +4,7 @@ session_start();
 include '../config_rizkia/koneksi_rizkia.php';
 date_default_timezone_set("Asia/Jakarta");
 
-if(!isset($_SESSION['user_rizkia'])){
+if(!isset($_SESSION['user_rizkia']) || $_SESSION['user_rizkia']['role_rizkia'] != 'admin'){
     header("Location: ../auth_rizkia/login_rizkia.php");
     exit;
 }
