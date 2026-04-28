@@ -12,6 +12,33 @@ $id_operator   = $_SESSION['user_rizkia']['id_rizkia'];
 $nama_operator = $_SESSION['user_rizkia']['username_rizkia'];
 $now = date("Y-m-d H:i:s");
 
+function sinkron_status_job($conn_rizkia, $job_id){
+    $job_id = (int)$job_id;
+    if($job_id <= 0){
+        return;
+    }
+
+    $stmt = mysqli_prepare($conn_rizkia, "SELECT COUNT(*) AS total, SUM(CASE WHEN status_rizkia='Selesai' THEN 1 ELSE 0 END) AS selesai FROM scheduling_rizkia WHERE job_id_rizkia=?");
+    mysqli_stmt_bind_param($stmt, "i", $job_id);
+    mysqli_stmt_execute($stmt);
+    $r = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+
+    $total = (int)($r['total'] ?? 0);
+    $selesai = (int)($r['selesai'] ?? 0);
+
+    if($total > 0 && $selesai === $total){
+        $status_job = 'Selesai';
+    }elseif($total > 0){
+        $status_job = 'Proses';
+    }else{
+        $status_job = 'Menunggu';
+    }
+
+    $stmt_update_job = mysqli_prepare($conn_rizkia, "UPDATE jobs_rizkia SET status_rizkia=? WHERE id_rizkia=?");
+    mysqli_stmt_bind_param($stmt_update_job, "si", $status_job, $job_id);
+    mysqli_stmt_execute($stmt_update_job);
+}
+
 /* ACTION */
 if(isset($_POST['aksi_rizkia'])){
     $id = (int)$_POST['jadwal_id_rizkia'];
@@ -19,26 +46,37 @@ if(isset($_POST['aksi_rizkia'])){
     $kendala = trim($_POST['kendala_rizkia'] ?? '');
     $qty_ok = (int)($_POST['qty_selesai_rizkia'] ?? 0);
     $qty_reject = (int)($_POST['qty_reject_rizkia'] ?? 0);
+    $job_id = 0;
 
-    if($aksi == 'mulai'){
+    $stmt_job = mysqli_prepare($conn_rizkia, "SELECT job_id_rizkia FROM scheduling_rizkia WHERE id_rizkia=? AND operator_id_rizkia=? LIMIT 1");
+    mysqli_stmt_bind_param($stmt_job, "ii", $id, $id_operator);
+    mysqli_stmt_execute($stmt_job);
+    $jadwal_ref = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt_job));
+    $job_id = (int)($jadwal_ref['job_id_rizkia'] ?? 0);
+
+    if($aksi == 'mulai' && $job_id > 0){
         mysqli_query($conn_rizkia,"
         UPDATE scheduling_rizkia 
         SET status_rizkia='Berjalan',
             actual_mulai_rizkia=COALESCE(actual_mulai_rizkia,'$now')
-        WHERE id_rizkia='$id'
+        WHERE id_rizkia='$id' AND operator_id_rizkia='$id_operator'
         ");
+
+        mysqli_query($conn_rizkia,"UPDATE jobs_rizkia SET status_rizkia='Proses' WHERE id_rizkia='$job_id'");
     }
 
-    if($aksi == 'tunda'){
+    if($aksi == 'tunda' && $job_id > 0){
         mysqli_query($conn_rizkia,"
         UPDATE scheduling_rizkia 
         SET status_rizkia='Tertunda',
             kendala_rizkia='$kendala'
-        WHERE id_rizkia='$id'
+        WHERE id_rizkia='$id' AND operator_id_rizkia='$id_operator'
         ");
+
+        mysqli_query($conn_rizkia,"UPDATE jobs_rizkia SET status_rizkia='Proses' WHERE id_rizkia='$job_id'");
     }
 
-    if($aksi == 'selesai'){
+    if($aksi == 'selesai' && $job_id > 0){
         $catatan = "OK:$qty_ok | Reject:$qty_reject | $kendala";
 
         mysqli_query($conn_rizkia,"
@@ -49,8 +87,10 @@ if(isset($_POST['aksi_rizkia'])){
             qty_selesai_rizkia='$qty_ok',
             qty_reject_rizkia='$qty_reject',
             catatan_operator_rizkia='$catatan'
-        WHERE id_rizkia='$id'
+        WHERE id_rizkia='$id' AND operator_id_rizkia='$id_operator'
         ");
+
+        sinkron_status_job($conn_rizkia, $job_id);
     }
 }
 
