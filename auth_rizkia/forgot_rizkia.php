@@ -26,9 +26,12 @@ if(isset($_POST['reset_rizkia'])){
             if(mysqli_stmt_affected_rows($stmt) > 0){
                 $popup_rizkia = "Password berhasil diubah!";
                 $popup_type_rizkia = "success";
+                $success = $popup_rizkia;
             } else {
                 $popup_rizkia = "Username tidak ditemukan.";
                 $popup_type_rizkia = "error";
+                $error = $popup_rizkia;
+            }
         }
     }
 }

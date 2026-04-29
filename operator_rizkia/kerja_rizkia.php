@@ -56,8 +56,9 @@ if(isset($_POST['aksi_rizkia'])){
     $id = (int)$_POST['jadwal_id_rizkia'];
     $aksi = $_POST['aksi_rizkia'];
     $kendala = trim($_POST['kendala_rizkia'] ?? '');
-    $qty_ok = (int)($_POST['qty_selesai_rizkia'] ?? 0);
+    $qty_total = (int)($_POST['qty_total_rizkia'] ?? 0);
     $qty_reject = (int)($_POST['qty_reject_rizkia'] ?? 0);
+    $qty_ok = max(0, $qty_total - $qty_reject);
     $job_id = 0;
 
     $stmt_job = mysqli_prepare($conn_rizkia, "SELECT job_id_rizkia FROM scheduling_rizkia WHERE id_rizkia=? AND operator_id_rizkia=? LIMIT 1");
@@ -89,11 +90,17 @@ if(isset($_POST['aksi_rizkia'])){
     }
 
     if($aksi == 'selesai' && $job_id > 0){
-        $catatan = "OK:$qty_ok | Reject:$qty_reject | $kendala";
-        $set_actual_selesai = $kolom_actual_selesai ? ", actual_selesai_rizkia='$now'" : "";
-        $set_qty_selesai = $kolom_qty_selesai ? ", qty_selesai_rizkia='$qty_ok'" : "";
-        $set_qty_reject = $kolom_qty_reject ? ", qty_reject_rizkia='$qty_reject'" : "";
-        $set_catatan_operator = $kolom_catatan_operator ? ", catatan_operator_rizkia='$catatan'" : "";
+        if($qty_total < 0){
+            $qty_total = 0;
+        }
+        if($qty_reject < 0){
+            $qty_reject = 0;
+        }
+        if($qty_reject > $qty_total){
+            $qty_reject = $qty_total;
+        }
+        $qty_ok = $qty_total - $qty_reject;
+        $catatan = "Total:$qty_total | OK:$qty_ok | Reject:$qty_reject | $kendala";
 
         mysqli_query($conn_rizkia,"
         UPDATE scheduling_rizkia 
@@ -112,7 +119,7 @@ if(isset($_POST['aksi_rizkia'])){
 
 /* DATA */
 $data = mysqli_query($conn_rizkia,"
-SELECT s.*, j.nama_job_rizkia, m.nama_mesin_rizkia
+SELECT s.*, j.nama_job_rizkia, j.jumlah_rizkia, m.nama_mesin_rizkia
 FROM scheduling_rizkia s
 LEFT JOIN jobs_rizkia j ON s.job_id_rizkia=j.id_rizkia
 LEFT JOIN mesin_rizkia m ON s.mesin_id_rizkia=m.id_rizkia
@@ -297,6 +304,7 @@ input,textarea{
     <div class="grid">
         <div><b>Mulai</b><br><?= $d['waktu_mulai_rizkia'] ?></div>
         <div><b>Actual Mulai</b><br><?= ($d['actual_mulai_rizkia'] ?? '') ?: '-' ?></div>
+        <div><b>Target Produksi</b><br><?= (int)($d['jumlah_rizkia'] ?? 0) ?></div>
         <div><b>Selesai</b><br>
             <?= ($d['waktu_selesai_rizkia'] ?? '') ?: (($d['actual_selesai_rizkia'] ?? '') ?: '-') ?>
         </div>
@@ -308,11 +316,11 @@ input,textarea{
 
         <input type="hidden" name="jadwal_id_rizkia" value="<?= $d['id_rizkia'] ?>">
 
-        <label>Qty OK</label>
-        <input type="number" name="qty_selesai_rizkia">
+        <label>Total Produksi</label>
+        <input type="number" name="qty_total_rizkia" min="0" placeholder="Total unit yang diproduksi">
 
         <label>Qty Reject</label>
-        <input type="number" name="qty_reject_rizkia">
+        <input type="number" name="qty_reject_rizkia" min="0" placeholder="Unit cacat / ditolak">
 
         <label>Kendala</label>
         <textarea name="kendala_rizkia"></textarea>

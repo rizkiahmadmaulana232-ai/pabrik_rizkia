@@ -249,7 +249,7 @@ button{
             </select>
 
             <input type="text" name="nama_rizkia" placeholder="Nama Job">
-            <input type="number" name="jumlah_rizkia" placeholder="Jumlah" required>
+            <input type="number" name="jumlah_rizkia" placeholder="Jumlah target produksi" min="1" required>
             <input type="date" name="deadline_rizkia" required>
 
             <button class="btn-update" name="tambah_rizkia">Tambah</button>
@@ -262,7 +262,7 @@ button{
             <tr>
                 <th>Sparepart</th>
                 <th>Nama Job</th>
-                <th>Jumlah</th>
+                <th>Jumlah Target</th>
                 <th>Deadline</th>
                 <th>Status</th>
                 <th>Aksi</th>
