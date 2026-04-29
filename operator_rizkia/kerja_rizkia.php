@@ -12,6 +12,18 @@ $id_operator   = $_SESSION['user_rizkia']['id_rizkia'];
 $nama_operator = $_SESSION['user_rizkia']['username_rizkia'];
 $now = date("Y-m-d H:i:s");
 
+function ada_kolom_scheduling($conn_rizkia, $nama_kolom){
+    static $cache_kolom = [];
+    if(isset($cache_kolom[$nama_kolom])){
+        return $cache_kolom[$nama_kolom];
+    }
+
+    $nama_kolom_aman = mysqli_real_escape_string($conn_rizkia, $nama_kolom);
+    $q = mysqli_query($conn_rizkia, "SHOW COLUMNS FROM scheduling_rizkia LIKE '$nama_kolom_aman'");
+    $cache_kolom[$nama_kolom] = $q && mysqli_num_rows($q) > 0;
+    return $cache_kolom[$nama_kolom];
+}
+
 function sinkron_status_job($conn_rizkia, $job_id){
     $job_id = (int)$job_id;
     if($job_id <= 0){
@@ -78,6 +90,10 @@ if(isset($_POST['aksi_rizkia'])){
 
     if($aksi == 'selesai' && $job_id > 0){
         $catatan = "OK:$qty_ok | Reject:$qty_reject | $kendala";
+        $set_actual_selesai = $kolom_actual_selesai ? ", actual_selesai_rizkia='$now'" : "";
+        $set_qty_selesai = $kolom_qty_selesai ? ", qty_selesai_rizkia='$qty_ok'" : "";
+        $set_qty_reject = $kolom_qty_reject ? ", qty_reject_rizkia='$qty_reject'" : "";
+        $set_catatan_operator = $kolom_catatan_operator ? ", catatan_operator_rizkia='$catatan'" : "";
 
         mysqli_query($conn_rizkia,"
         UPDATE scheduling_rizkia 
@@ -280,9 +296,9 @@ input,textarea{
 
     <div class="grid">
         <div><b>Mulai</b><br><?= $d['waktu_mulai_rizkia'] ?></div>
-        <div><b>Actual Mulai</b><br><?= $d['actual_mulai_rizkia'] ?: '-' ?></div>
+        <div><b>Actual Mulai</b><br><?= ($d['actual_mulai_rizkia'] ?? '') ?: '-' ?></div>
         <div><b>Selesai</b><br>
-            <?= $d['waktu_selesai_rizkia'] ?: $d['actual_selesai_rizkia'] ?: '-' ?>
+            <?= ($d['waktu_selesai_rizkia'] ?? '') ?: (($d['actual_selesai_rizkia'] ?? '') ?: '-') ?>
         </div>
     </div>
 
@@ -319,8 +335,8 @@ input,textarea{
 
     <?php } else { ?>
 
-        <p><b>Hasil:</b> OK <?= $d['qty_selesai_rizkia'] ?> | Reject <?= $d['qty_reject_rizkia'] ?></p>
-        <p><b>Catatan:</b> <?= $d['catatan_operator_rizkia'] ?></p>
+        <p><b>Hasil:</b> OK <?= $d['qty_selesai_rizkia'] ?? 0 ?> | Reject <?= $d['qty_reject_rizkia'] ?? 0 ?></p>
+        <p><b>Catatan:</b> <?= $d['catatan_operator_rizkia'] ?? '-' ?></p>
 
     <?php } ?>
 

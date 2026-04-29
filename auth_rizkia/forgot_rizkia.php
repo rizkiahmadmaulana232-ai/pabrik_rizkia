@@ -16,7 +16,6 @@ if(isset($_POST['reset_rizkia'])){
         if($username_rizkia === '' || $password_baru_input === ''){
             $popup_rizkia = "Username dan password baru wajib diisi.";
             $popup_type_rizkia = "error";
-=======
             $error = "Username dan password baru wajib diisi.";
         } else {
             $password_baru_rizkia = password_hash($password_baru_input, PASSWORD_DEFAULT);
@@ -30,10 +29,6 @@ if(isset($_POST['reset_rizkia'])){
             } else {
                 $popup_rizkia = "Username tidak ditemukan.";
                 $popup_type_rizkia = "error";
-                $success = "Password berhasil diubah!";
-            } else {
-                $error = "Username tidak ditemukan.";
-            }
         }
     }
 }
