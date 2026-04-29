@@ -59,11 +59,6 @@ if(isset($_POST['aksi_rizkia'])){
     $qty_ok = (int)($_POST['qty_selesai_rizkia'] ?? 0);
     $qty_reject = (int)($_POST['qty_reject_rizkia'] ?? 0);
     $job_id = 0;
-    $kolom_actual_mulai = ada_kolom_scheduling($conn_rizkia, 'actual_mulai_rizkia');
-    $kolom_actual_selesai = ada_kolom_scheduling($conn_rizkia, 'actual_selesai_rizkia');
-    $kolom_qty_selesai = ada_kolom_scheduling($conn_rizkia, 'qty_selesai_rizkia');
-    $kolom_qty_reject = ada_kolom_scheduling($conn_rizkia, 'qty_reject_rizkia');
-    $kolom_catatan_operator = ada_kolom_scheduling($conn_rizkia, 'catatan_operator_rizkia');
 
     $stmt_job = mysqli_prepare($conn_rizkia, "SELECT job_id_rizkia FROM scheduling_rizkia WHERE id_rizkia=? AND operator_id_rizkia=? LIMIT 1");
     mysqli_stmt_bind_param($stmt_job, "ii", $id, $id_operator);
@@ -72,11 +67,10 @@ if(isset($_POST['aksi_rizkia'])){
     $job_id = (int)($jadwal_ref['job_id_rizkia'] ?? 0);
 
     if($aksi == 'mulai' && $job_id > 0){
-        $set_actual_mulai = $kolom_actual_mulai ? ", actual_mulai_rizkia=COALESCE(actual_mulai_rizkia,'$now')" : "";
         mysqli_query($conn_rizkia,"
         UPDATE scheduling_rizkia 
-        SET status_rizkia='Berjalan'
-            $set_actual_mulai
+        SET status_rizkia='Berjalan',
+            actual_mulai_rizkia=COALESCE(actual_mulai_rizkia,'$now')
         WHERE id_rizkia='$id' AND operator_id_rizkia='$id_operator'
         ");
 
@@ -104,11 +98,11 @@ if(isset($_POST['aksi_rizkia'])){
         mysqli_query($conn_rizkia,"
         UPDATE scheduling_rizkia 
         SET status_rizkia='Selesai',
-            waktu_selesai_rizkia='$now'
-            $set_actual_selesai
-            $set_qty_selesai
-            $set_qty_reject
-            $set_catatan_operator
+            actual_selesai_rizkia='$now',
+            waktu_selesai_rizkia='$now',
+            qty_selesai_rizkia='$qty_ok',
+            qty_reject_rizkia='$qty_reject',
+            catatan_operator_rizkia='$catatan'
         WHERE id_rizkia='$id' AND operator_id_rizkia='$id_operator'
         ");
 

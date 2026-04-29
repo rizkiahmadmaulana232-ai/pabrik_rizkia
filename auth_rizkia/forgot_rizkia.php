@@ -8,6 +8,7 @@ if(isset($_POST['reset_rizkia'])){
     if(!csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
         $popup_rizkia = "Token keamanan tidak valid. Coba refresh halaman.";
         $popup_type_rizkia = "error";
+        $error = "Token keamanan tidak valid. Coba refresh halaman.";
     } else {
         $username_rizkia = trim($_POST['username_rizkia'] ?? '');
         $password_baru_input = $_POST['password_baru_rizkia'] ?? '';
@@ -15,6 +16,7 @@ if(isset($_POST['reset_rizkia'])){
         if($username_rizkia === '' || $password_baru_input === ''){
             $popup_rizkia = "Username dan password baru wajib diisi.";
             $popup_type_rizkia = "error";
+            $error = "Username dan password baru wajib diisi.";
         } else {
             $password_baru_rizkia = password_hash($password_baru_input, PASSWORD_DEFAULT);
             $stmt = mysqli_prepare($conn_rizkia, "UPDATE users_rizkia SET password_rizkia=? WHERE username_rizkia=?");
@@ -27,7 +29,6 @@ if(isset($_POST['reset_rizkia'])){
             } else {
                 $popup_rizkia = "Username tidak ditemukan.";
                 $popup_type_rizkia = "error";
-            }
         }
     }
 }
@@ -270,6 +271,14 @@ if(isset($_POST['reset_rizkia'])){
 <div class="reset-box">
     <h2>Reset Password</h2>
     <p>Masukkan username dan password baru Anda</p>
+
+    <?php if(isset($success)){ ?>
+        <div class="success"><?= $success ?></div>
+    <?php } ?>
+
+    <?php if(isset($error)){ ?>
+        <div class="success" style="background:#fdecea;color:#c0392b;border-color:#f5c6cb;"><?= $error ?></div>
+    <?php } ?>
 
     <form method="POST">
         <?= csrf_input_rizkia(); ?>

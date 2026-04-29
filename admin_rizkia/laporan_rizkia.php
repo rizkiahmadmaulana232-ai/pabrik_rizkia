@@ -25,6 +25,7 @@ if(isset($_POST['simpan_rizkia'])){
     } else {
         $popup_rizkia = "Token keamanan tidak valid.";
         $popup_type_rizkia = "error";
+        }
     }
 }
 ?>
