@@ -18,8 +18,27 @@ $now = date("Y-m-d H:i:s");
 mysqli_query($conn_rizkia,"
 UPDATE scheduling_rizkia 
 SET status_rizkia='Selesai'
-WHERE status_rizkia='Dijadwalkan'
+WHERE status_rizkia IN ('Dijadwalkan','Berjalan')
 AND waktu_selesai_rizkia <= '$now'
+");
+
+mysqli_query($conn_rizkia,"
+UPDATE jobs_rizkia j
+SET j.status_rizkia = CASE
+    WHEN EXISTS (
+        SELECT 1 FROM scheduling_rizkia s1
+        WHERE s1.job_id_rizkia = j.id_rizkia
+    ) AND NOT EXISTS (
+        SELECT 1 FROM scheduling_rizkia s2
+        WHERE s2.job_id_rizkia = j.id_rizkia
+        AND s2.status_rizkia != 'Selesai'
+    ) THEN 'Selesai'
+    WHEN EXISTS (
+        SELECT 1 FROM scheduling_rizkia s3
+        WHERE s3.job_id_rizkia = j.id_rizkia
+    ) THEN 'Proses'
+    ELSE COALESCE(j.status_rizkia, 'Menunggu')
+END
 ");
 
 /* =========================

@@ -6,7 +6,7 @@ include '../config_rizkia/security_rizkia.php';
 date_default_timezone_set("Asia/Jakarta");
 
 /* ROLE CHECK */
-if(!isset($_SESSION['user_rizkia'])){
+if(!isset($_SESSION['user_rizkia']) || $_SESSION['user_rizkia']['role_rizkia'] != 'admin'){
     header("Location: ../auth_rizkia/login_rizkia.php");
     exit;
 }
@@ -90,6 +90,10 @@ if(isset($_POST['jadwal_rizkia'])){
                 $stmt_insert = mysqli_prepare($conn_rizkia, "INSERT INTO scheduling_rizkia (job_id_rizkia, mesin_id_rizkia, operator_id_rizkia, waktu_mulai_rizkia, waktu_selesai_rizkia, status_rizkia) VALUES(?,?,?,?,?,'Dijadwalkan')");
                 mysqli_stmt_bind_param($stmt_insert, "iiiss", $job, $mesin, $operator, $mulai, $selesai);
                 mysqli_stmt_execute($stmt_insert);
+
+                $stmt_job_status = mysqli_prepare($conn_rizkia, "UPDATE jobs_rizkia SET status_rizkia='Dijadwalkan' WHERE id_rizkia=?");
+                mysqli_stmt_bind_param($stmt_job_status, "i", $job);
+                mysqli_stmt_execute($stmt_job_status);
             } else {
                 echo "<script>alert('$error');</script>";
             }

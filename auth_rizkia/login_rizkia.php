@@ -6,7 +6,7 @@ include '../config_rizkia/security_rizkia.php';
 
 if(isset($_POST['login_rizkia'])){
     if(!csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
-        $error = "Token keamanan tidak valid. Coba refresh halaman.";
+        $popup_rizkia = "Token keamanan tidak valid. Coba refresh halaman.";
     } else {
         $username_rizkia = trim($_POST['username_rizkia'] ?? '');
         $password_input_rizkia = $_POST['password_rizkia'] ?? '';
@@ -42,7 +42,7 @@ if(isset($_POST['login_rizkia'])){
         }
         exit;
         }else{
-            $error = "Username atau Password salah!";
+            $popup_rizkia = "Username atau Password salah!";
         }
     }
 }
@@ -306,10 +306,6 @@ if(isset($_POST['login_rizkia'])){
             <h2>Login</h2>
             <p>Masuk ke sistem untuk melanjutkan aktivitas produksi</p>
 
-            <?php if(isset($error)){ ?>
-                <div class="error"><?= $error ?></div>
-            <?php } ?>
-
             <form method="POST">
                 <?= csrf_input_rizkia(); ?>
                 <div class="input-group">
@@ -333,6 +329,12 @@ if(isset($_POST['login_rizkia'])){
     </div>
 
 </div>
+
+<?php if(isset($popup_rizkia)){ ?>
+<script>
+    alert("<?= addslashes($popup_rizkia); ?>");
+</script>
+<?php } ?>
 
 </body>
 </html>

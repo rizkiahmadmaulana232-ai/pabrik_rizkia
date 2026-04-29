@@ -5,7 +5,7 @@ session_start();
 date_default_timezone_set("Asia/Jakarta");
 
 /* ROLE CHECK */
-if(!isset($_SESSION['user_rizkia'])){
+if(!isset($_SESSION['user_rizkia']) || $_SESSION['user_rizkia']['role_rizkia'] != 'admin'){
     header("Location: ../auth_rizkia/login_rizkia.php");
     exit;
 }
