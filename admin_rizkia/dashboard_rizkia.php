@@ -36,16 +36,16 @@ $operator = mysqli_fetch_array(mysqli_query($conn_rizkia,"
 
 $now_rizkia = date("Y-m-d H:i:s");
 
-/* LIVE ACTIVITY */
-$live = mysqli_query($conn_rizkia,"
-SELECT s.*, j.nama_job_rizkia, m.nama_mesin_rizkia, u.username_rizkia
-FROM scheduling_rizkia s
-LEFT JOIN jobs_rizkia j ON s.job_id_rizkia = j.id_rizkia
-LEFT JOIN mesin_rizkia m ON s.mesin_id_rizkia = m.id_rizkia
-LEFT JOIN users_rizkia u ON s.operator_id_rizkia = u.id_rizkia
-ORDER BY s.waktu_mulai_rizkia ASC
-LIMIT 6
-");
+$status_labels = ['Dijadwalkan','Berjalan','Tertunda','Selesai'];
+$status_counts = [];
+$status_total = 0;
+foreach($status_labels as $status_label){
+    $status_aman = mysqli_real_escape_string($conn_rizkia, $status_label);
+    $q_status = mysqli_fetch_array(mysqli_query($conn_rizkia, "SELECT COUNT(*) AS total FROM scheduling_rizkia WHERE status_rizkia='$status_aman'"));
+    $jumlah_status = (int)($q_status['total'] ?? 0);
+    $status_counts[$status_label] = $jumlah_status;
+    $status_total += $jumlah_status;
+}
 
 /* RECENT REPORT */
 $laporan = mysqli_query($conn_rizkia,"
@@ -342,6 +342,33 @@ tr:hover{
     color:#7f8c8d;
     margin-top:4px;
 }
+
+.chart-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+.chart-row{
+    display:grid;
+    grid-template-columns:120px 1fr 50px;
+    align-items:center;
+    gap:10px;
+}
+.chart-bar-wrap{
+    height:14px;
+    border-radius:999px;
+    background:#e9eef5;
+    overflow:hidden;
+}
+.chart-bar{
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(135deg,#3498db,#2c3e50);
+}
+.chart-bar[data-status="Berjalan"]{ background:linear-gradient(135deg,#27ae60,#1e8449); }
+.chart-bar[data-status="Dijadwalkan"]{ background:linear-gradient(135deg,#f39c12,#d68910); }
+.chart-bar[data-status="Tertunda"]{ background:linear-gradient(135deg,#e67e22,#ca6f1e); }
+.chart-bar[data-status="Selesai"]{ background:linear-gradient(135deg,#3498db,#2e86c1); }
 </style>
 </head>
 <body>
@@ -410,45 +437,21 @@ tr:hover{
 <div class="grid-2">
 
     <div class="card">
-        <h3>Monitoring Produksi</h3>
-
-        <table>
-            <tr>
-                <th>Job</th>
-                <th>Mesin</th>
-                <th>Operator</th>
-                <th>Mulai</th>
-                <th>Status</th>
-            </tr>
-
-            <?php while($d=mysqli_fetch_array($live)){ 
-                $badge = "gray";
-                $text  = "Idle";
-
-                if($d['status_rizkia'] == 'Selesai'){
-                    $badge = "red";
-                    $text  = "Selesai";
-                }else{
-                    $selisih = (strtotime($d['waktu_mulai_rizkia']) - strtotime($now_rizkia))/60;
-
-                    if($selisih <= 60 && $selisih > 0){
-                        $badge = "orange";
-                        $text  = "Akan Mulai";
-                    }elseif($now_rizkia >= $d['waktu_mulai_rizkia']){
-                        $badge = "green";
-                        $text  = "Berjalan";
-                    }
-                }
+        <h3>Distribusi Status Scheduling</h3>
+        <div class="chart-list">
+            <?php foreach($status_labels as $status_label){ 
+                $jumlah_status = (int)($status_counts[$status_label] ?? 0);
+                $persen = $status_total > 0 ? round(($jumlah_status / $status_total) * 100) : 0;
             ?>
-            <tr>
-                <td><?= $d['nama_job_rizkia'] ?></td>
-                <td><?= $d['nama_mesin_rizkia'] ?></td>
-                <td><?= $d['username_rizkia'] ?></td>
-                <td><?= $d['waktu_mulai_rizkia'] ?></td>
-                <td><span class="badge <?= $badge ?>"><?= $text ?></span></td>
-            </tr>
+            <div class="chart-row">
+                <strong><?= $status_label ?></strong>
+                <div class="chart-bar-wrap">
+                    <div class="chart-bar" data-status="<?= $status_label ?>" style="width:<?= $persen ?>%"></div>
+                </div>
+                <span><?= $jumlah_status ?></span>
+            </div>
             <?php } ?>
-        </table>
+        </div>
     </div>
 
     <div class="card">

@@ -192,9 +192,11 @@ button{
 }
 
 .btn-update{background:#2c3e50}
-.btn-edit{background:#3498db}
-.btn-hapus{background:#e74c3c}
+.btn{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin:2px;color:white}
+.edit{background:#3498db}
+.delete{background:#e74c3c}
 .btn-batal{background:#7f8c8d}
+.aksi-cell{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap}
 
 .modal{
     display:none;
@@ -275,12 +277,12 @@ button{
                 <td><?= (int)$d['jumlah_rizkia'] ?></td>
                 <td><?= htmlspecialchars($d['deadline_rizkia']) ?></td>
                 <td><?= htmlspecialchars($d['status_rizkia']) ?></td>
-                <td>
-                    <button class="btn-edit" onclick="openEdit('<?= $d['id_rizkia'] ?>','<?= (int)$d['sparepart_id_rizkia'] ?>','<?= htmlspecialchars($d['nama_job_rizkia'], ENT_QUOTES) ?>','<?= (int)$d['jumlah_rizkia'] ?>','<?= $d['deadline_rizkia'] ?>')">Edit</button>
+                <td class="aksi-cell">
+                    <button class="btn edit" onclick="openEdit('<?= $d['id_rizkia'] ?>','<?= (int)$d['sparepart_id_rizkia'] ?>','<?= htmlspecialchars($d['nama_job_rizkia'], ENT_QUOTES) ?>','<?= (int)$d['jumlah_rizkia'] ?>','<?= $d['deadline_rizkia'] ?>')">Edit</button>
 
                     <form method="POST" style="display:inline">
                         <input type="hidden" name="id" value="<?= $d['id_rizkia'] ?>">
-                        <button class="btn-hapus" name="hapus_rizkia">Hapus</button>
+                        <button class="btn delete" name="hapus_rizkia">Hapus</button>
                     </form>
                 </td>
             </tr>

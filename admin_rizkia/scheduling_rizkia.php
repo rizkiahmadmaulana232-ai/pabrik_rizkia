@@ -361,6 +361,9 @@ button:hover,.btn:hover{
 .btn-hapus,.btn-batal{
     background:#e74c3c;
 }
+.btn.edit{background:#3498db;}
+.btn.delete{background:#e74c3c;}
+.aksi-cell{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap}
 
 .btn-hapus:hover,.btn-batal:hover{
     background:#c0392b;
@@ -513,9 +516,9 @@ while($d = mysqli_fetch_array($o)){
     <span style="color:orange;font-weight:bold;">⏳ Dijadwalkan</span>
 <?php } ?>
 </td>
-<td>
+<td class="aksi-cell">
 
-<button type="button" onclick="openEdit(
+<button type="button" class="btn edit" onclick="openEdit(
 '<?= $d['id_rizkia'] ?>',
 '<?= $d['job_id_rizkia'] ?>',
 '<?= $d['mesin_id_rizkia'] ?>',
@@ -526,7 +529,7 @@ while($d = mysqli_fetch_array($o)){
 <form method="POST" style="display:inline">
     <?= csrf_input_rizkia(); ?>
     <input type="hidden" name="id" value="<?= $d['id_rizkia'] ?>">
-    <button class="btn-hapus" name="hapus">Hapus</button>
+    <button class="btn delete" name="hapus">Hapus</button>
 </form>
 
 </td>

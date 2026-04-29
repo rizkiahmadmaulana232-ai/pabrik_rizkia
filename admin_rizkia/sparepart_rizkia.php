@@ -149,9 +149,11 @@ button{
 }
 
 .btn-update{background:#2c3e50}
-.btn-edit{background:#3498db}
-.btn-hapus{background:#e74c3c}
+.btn-edit,.edit{background:#3498db}
+.btn-hapus,.delete{background:#e74c3c}
 .btn-batal{background:#7f8c8d}
+.btn{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin:2px;color:white}
+.aksi-cell{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap}
 
 /* MODAL */
 .modal{
@@ -229,14 +231,14 @@ button{
                 <td><?= htmlspecialchars($d['tipe_motor_rizkia']) ?></td>
                 <td><?= htmlspecialchars($d['satuan_rizkia']) ?></td>
                 <td><?= htmlspecialchars($d['grade_kualitas_rizkia']) ?></td>
-                <td>
-                    <button class="btn-edit"
+                <td class="aksi-cell">
+                    <button class="btn edit"
                     onclick="openEdit('<?= $d['id_rizkia'] ?>','<?= htmlspecialchars($d['kode_part_rizkia'],ENT_QUOTES) ?>','<?= htmlspecialchars($d['nama_part_rizkia'],ENT_QUOTES) ?>','<?= htmlspecialchars($d['kategori_rizkia'],ENT_QUOTES) ?>','<?= htmlspecialchars($d['tipe_motor_rizkia'],ENT_QUOTES) ?>','<?= htmlspecialchars($d['satuan_rizkia'],ENT_QUOTES) ?>','<?= htmlspecialchars($d['grade_kualitas_rizkia'],ENT_QUOTES) ?>')">
                     Edit</button>
 
                     <form method="POST" style="display:inline">
                         <input type="hidden" name="id" value="<?= $d['id_rizkia'] ?>">
-                        <button class="btn-hapus" name="hapus_rizkia">Hapus</button>
+                        <button class="btn delete" name="hapus_rizkia">Hapus</button>
                     </form>
                 </td>
             </tr>
