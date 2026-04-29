@@ -16,6 +16,7 @@ if(isset($_POST['simpan_rizkia'])){
         $isi = mysqli_real_escape_string($conn_rizkia, $_POST['isi'] ?? '');
         if($isi !== ''){
             mysqli_query($conn_rizkia,"INSERT INTO laporan_rizkia VALUES(NULL,'$isi',CURDATE())");
+
             $popup_rizkia = "Laporan berhasil disimpan.";
             $popup_type_rizkia = "success";
         } else {
@@ -25,6 +26,8 @@ if(isset($_POST['simpan_rizkia'])){
     } else {
         $popup_rizkia = "Token keamanan tidak valid.";
         $popup_type_rizkia = "error";
+        }
+
     }
 }
 ?>
