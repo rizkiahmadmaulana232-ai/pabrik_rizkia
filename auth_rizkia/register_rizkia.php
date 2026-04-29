@@ -6,7 +6,7 @@ include '../config_rizkia/security_rizkia.php';
 
 if(isset($_POST['daftar_rizkia'])){
     if(!csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
-        $error = "Token keamanan tidak valid. Coba refresh halaman.";
+        $popup_rizkia = "Token keamanan tidak valid. Coba refresh halaman.";
     } else {
         $username_rizkia = trim($_POST['username_rizkia'] ?? '');
         $password_input_rizkia = $_POST['password_rizkia'] ?? '';
@@ -14,15 +14,15 @@ if(isset($_POST['daftar_rizkia'])){
 
         $role_valid_rizkia = ['admin', 'operator', 'engineering'];
         if($username_rizkia === '' || $password_input_rizkia === '' || !in_array($role_rizkia, $role_valid_rizkia, true)){
-            $error = "Data registrasi tidak valid.";
+            $popup_rizkia = "Data registrasi tidak valid.";
         } else {
             $password_rizkia = password_hash($password_input_rizkia, PASSWORD_DEFAULT);
             $stmt_rizkia = mysqli_prepare($conn_rizkia, "INSERT INTO users_rizkia (username_rizkia, password_rizkia, role_rizkia, created_at_rizkia) VALUES(?,?,?,NOW())");
             mysqli_stmt_bind_param($stmt_rizkia, "sss", $username_rizkia, $password_rizkia, $role_rizkia);
             if(mysqli_stmt_execute($stmt_rizkia)){
-                $success = "Registrasi berhasil! Silakan login.";
+                $popup_rizkia = "Registrasi berhasil! Silakan login.";
             } else {
-                $error = "Registrasi gagal. Username mungkin sudah dipakai.";
+                $popup_rizkia = "Registrasi gagal. Username mungkin sudah dipakai.";
             }
         }
     }
@@ -269,14 +269,6 @@ if(isset($_POST['daftar_rizkia'])){
     <h2>Register</h2>
     <p>Buat akun baru untuk mengakses sistem produksi</p>
 
-    <?php if(isset($success)){ ?>
-        <div class="success"><?= htmlspecialchars($success) ?> <a href="login_rizkia.php">Login</a></div>
-    <?php } ?>
-
-    <?php if(isset($error)){ ?>
-        <div class="success" style="background:#fdecea;color:#c0392b;border-color:#f5c6cb;"><?= htmlspecialchars($error) ?></div>
-    <?php } ?>
-
     <form method="POST">
         <?= csrf_input_rizkia(); ?>
 
@@ -306,6 +298,15 @@ if(isset($_POST['daftar_rizkia'])){
         <a href="login_rizkia.php">Sudah punya akun? Login</a>
     </div>
 </div>
+
+<?php if(isset($popup_rizkia)){ ?>
+<script>
+    alert("<?= addslashes($popup_rizkia); ?>");
+    <?php if(strpos($popup_rizkia, 'berhasil') !== false){ ?>
+    window.location.href = "login_rizkia.php";
+    <?php } ?>
+</script>
+<?php } ?>
 
 </body>
 </html>

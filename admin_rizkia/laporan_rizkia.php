@@ -16,7 +16,18 @@ if(isset($_POST['simpan_rizkia'])){
         $isi = mysqli_real_escape_string($conn_rizkia, $_POST['isi'] ?? '');
         if($isi !== ''){
             mysqli_query($conn_rizkia,"INSERT INTO laporan_rizkia VALUES(NULL,'$isi',CURDATE())");
+
+            $popup_rizkia = "Laporan berhasil disimpan.";
+            $popup_type_rizkia = "success";
+        } else {
+            $popup_rizkia = "Isi laporan tidak boleh kosong.";
+            $popup_type_rizkia = "error";
         }
+    } else {
+        $popup_rizkia = "Token keamanan tidak valid.";
+        $popup_type_rizkia = "error";
+        }
+
     }
 }
 ?>
@@ -300,6 +311,12 @@ if(isset($_POST['simpan_rizkia'])){
     </div>
 
 </div>
+
+<?php if(isset($popup_rizkia)){ ?>
+<script>
+    alert("<?= addslashes($popup_rizkia); ?>");
+</script>
+<?php } ?>
 
 </body>
 </html>

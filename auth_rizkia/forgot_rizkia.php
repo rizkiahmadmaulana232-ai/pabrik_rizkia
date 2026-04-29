@@ -6,13 +6,23 @@ include '../config_rizkia/security_rizkia.php';
 
 if(isset($_POST['reset_rizkia'])){
     if(!csrf_validate_rizkia($_POST['csrf_token_rizkia'] ?? '')){
+<<<<<<< codex/jelaskan-logika-alur-yang-dibuat-7lztii
+        $popup_rizkia = "Token keamanan tidak valid. Coba refresh halaman.";
+        $popup_type_rizkia = "error";
+=======
         $error = "Token keamanan tidak valid. Coba refresh halaman.";
+>>>>>>> main
     } else {
         $username_rizkia = trim($_POST['username_rizkia'] ?? '');
         $password_baru_input = $_POST['password_baru_rizkia'] ?? '';
 
         if($username_rizkia === '' || $password_baru_input === ''){
+<<<<<<< codex/jelaskan-logika-alur-yang-dibuat-7lztii
+            $popup_rizkia = "Username dan password baru wajib diisi.";
+            $popup_type_rizkia = "error";
+=======
             $error = "Username dan password baru wajib diisi.";
+>>>>>>> main
         } else {
             $password_baru_rizkia = password_hash($password_baru_input, PASSWORD_DEFAULT);
             $stmt = mysqli_prepare($conn_rizkia, "UPDATE users_rizkia SET password_rizkia=? WHERE username_rizkia=?");
@@ -20,9 +30,17 @@ if(isset($_POST['reset_rizkia'])){
             mysqli_stmt_execute($stmt);
 
             if(mysqli_stmt_affected_rows($stmt) > 0){
+<<<<<<< codex/jelaskan-logika-alur-yang-dibuat-7lztii
+                $popup_rizkia = "Password berhasil diubah!";
+                $popup_type_rizkia = "success";
+            } else {
+                $popup_rizkia = "Username tidak ditemukan.";
+                $popup_type_rizkia = "error";
+=======
                 $success = "Password berhasil diubah!";
             } else {
                 $error = "Username tidak ditemukan.";
+>>>>>>> main
             }
         }
     }
@@ -267,6 +285,8 @@ if(isset($_POST['reset_rizkia'])){
     <h2>Reset Password</h2>
     <p>Masukkan username dan password baru Anda</p>
 
+<<<<<<< codex/jelaskan-logika-alur-yang-dibuat-7lztii
+=======
     <?php if(isset($success)){ ?>
         <div class="success"><?= $success ?></div>
     <?php } ?>
@@ -275,6 +295,7 @@ if(isset($_POST['reset_rizkia'])){
         <div class="success" style="background:#fdecea;color:#c0392b;border-color:#f5c6cb;"><?= $error ?></div>
     <?php } ?>
 
+>>>>>>> main
     <form method="POST">
         <?= csrf_input_rizkia(); ?>
 
@@ -295,6 +316,12 @@ if(isset($_POST['reset_rizkia'])){
         <a href="login_rizkia.php">Kembali ke Login</a>
     </div>
 </div>
+
+<?php if(isset($popup_rizkia)){ ?>
+<script>
+    alert("<?= addslashes($popup_rizkia); ?>");
+</script>
+<?php } ?>
 
 </body>
 </html>
